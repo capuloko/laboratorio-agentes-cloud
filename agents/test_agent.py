@@ -1,50 +1,28 @@
-"""Minimal OpenAI Agents SDK smoke test for GitHub Actions."""
+"""Simple business summarization agent."""
 
 from __future__ import annotations
 
-import asyncio
-import os
-
-from agents import Agent, Runner
+from agents.base_agent import AgentInput, AgentOutput, BaseAgent
+from core.config import AppConfig
 
 
-DEFAULT_TEXT = (
-    "A cloud agent lab lets you test small AI business ideas from GitHub Actions "
-    "without running Python, Docker, or a server on your local machine."
+BUSINESS_TEXT = (
+    "A small consulting studio wants to use AI agents to research business ideas, "
+    "summarize market signals, and decide which experiments are worth testing first."
 )
 
 
-def get_input_text() -> str:
-    """Read workflow input from the environment, with a safe default."""
-    return os.getenv("AGENT_INPUT_TEXT", "").strip() or DEFAULT_TEXT
+class TestAgent(BaseAgent):
+    name = "test_agent"
 
-
-async def main() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError(
-            "Missing OPENAI_API_KEY. Add it in GitHub repo Settings -> "
-            "Secrets and variables -> Actions."
+    def build_prompt(self, agent_input: AgentInput) -> str:
+        return (
+            "Summarize the following business idea in one clear sentence. "
+            "Do not add extra commentary.\n\n"
+            f"Business idea:\n{agent_input.text}"
         )
 
-    input_text = get_input_text()
-    agent = Agent(
-        name="SummaryAgent",
-        instructions=(
-            "You summarize text clearly. Return exactly three concise bullet points. "
-            "Use the same language as the input when possible."
-        ),
-    )
 
-    result = await Runner.run(
-        agent,
-        input=f"Summarize this text:\n\n{input_text}",
-    )
-
-    print("=== Input ===")
-    print(input_text)
-    print("\n=== Agent output ===")
-    print(result.final_output)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+def run_test_agent(config: AppConfig) -> AgentOutput:
+    agent = TestAgent(config)
+    return agent.run(AgentInput(text=BUSINESS_TEXT))
