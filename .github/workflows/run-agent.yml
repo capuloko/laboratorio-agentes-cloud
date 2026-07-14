@@ -1,0 +1,39 @@
+name: Run agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      text:
+        description: Text to summarize
+        required: false
+        type: string
+        default: "A cloud agent lab lets you test AI ideas without running the agent on your local machine."
+
+permissions:
+  contents: read
+
+jobs:
+  run-agent:
+    name: Run test agent
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Execute agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENT_INPUT_TEXT: ${{ inputs.text }}
+        run: python agents/test_agent.py
